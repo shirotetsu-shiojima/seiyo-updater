@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "jp.seiyo.updater.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": ["TitleScreenMixin", "FileResourcePackProviderMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

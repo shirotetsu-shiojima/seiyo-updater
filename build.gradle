@@ -1,0 +1,76 @@
+plugins {
+    id 'fabric-loom' version '1.7.4'
+}
+group = 'jp.seiyo'
+version = '1.7.0+mc1.19.2'
+repositories { mavenCentral() }
+
+configurations { headlessLibraries }
+dependencies {
+    minecraft 'com.mojang:minecraft:1.19.2'
+    mappings 'net.fabricmc:yarn:1.19.2+build.28:v2'
+    modImplementation 'net.fabricmc:fabric-loader:0.14.25'
+    headlessLibraries 'com.google.code.gson:gson:2.8.9'
+    headlessLibraries('net.fabricmc:fabric-loader:0.14.25') { transitive = false }
+}
+
+loom { mixin.useLegacyMixinAp = false }
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('processResources') {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand(version: project.version) }
+}
+
+tasks.register('updateWorkerJar', Jar) {
+    dependsOn tasks.named('compileJava')
+    archiveFileName = 'seiyo-update-worker.jar'
+    destinationDirectory = layout.buildDirectory.dir('worker')
+    from(tasks.named('compileJava').flatMap { it.destinationDirectory }) {
+        include 'jp/seiyo/updater/UpdateWorker*.class'
+    }
+}
+tasks.named('jar') {
+    from(tasks.named('updateWorkerJar').flatMap { it.archiveFile })
+}
+
+tasks.register('bootstrapJar', Jar) {
+    dependsOn tasks.named('compileJava')
+    archiveFileName = 'seiyo-bootstrap.jar'
+    from(tasks.named('compileJava').flatMap { it.destinationDirectory }) {
+        include 'jp/seiyo/updater/ArchiveBootstrap.class'
+        include 'jp/seiyo/updater/RuntimeFiles.class'
+        include 'jp/seiyo/updater/PackedArchive*.class'
+        include 'jp/seiyo/updater/UpdateWorker*.class'
+    }
+    manifest { attributes('Premain-Class': 'jp.seiyo.updater.ArchiveBootstrap') }
+}
+tasks.named('assemble') { dependsOn tasks.named('bootstrapJar') }
+
+tasks.register('headlessToolsJar', Jar) {
+    dependsOn tasks.named('compileJava')
+    archiveFileName = 'seiyo-tools.jar'
+    from(tasks.named('compileJava').flatMap { it.destinationDirectory }) {
+        include 'jp/seiyo/updater/SeiyoTools*.class'
+        include 'jp/seiyo/updater/ServerUpdates*.class'
+        include 'jp/seiyo/updater/Catalog*.class'
+        include 'jp/seiyo/updater/Downloads*.class'
+        include 'jp/seiyo/updater/PackedArchive*.class'
+        include 'jp/seiyo/updater/UpdateWorker*.class'
+    }
+    from({ configurations.headlessLibraries.collect { zipTree(it) } }) {
+        include 'com/google/gson/**'
+        include 'net/fabricmc/loader/api/**'
+        include 'net/fabricmc/loader/impl/util/version/**'
+        include 'net/fabricmc/loader/util/version/**'
+        include 'net/fabricmc/loader/impl/util/StringUtil.class'
+        include 'LICENSE*', 'NOTICE*'
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+    manifest { attributes('Main-Class': 'jp.seiyo.updater.SeiyoTools') }
+}
+tasks.named('assemble') { dependsOn tasks.named('headlessToolsJar') }

@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>星陽 配布カタログ</title>
+<style>
+:root{color-scheme:light;--ink:#183047;--muted:#52667a;--line:#d5e1ea;--accent:#006858;--pale:#e3f4ef;--surface:#fff;--bg:#f1f6fa;font-family:"Zen Kaku Gothic New","Yu Gothic UI",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-size:14px}
+header{background:#10263b;color:#f1f7ff;border-bottom:4px solid #72dcbb}
+header>div,main{max-width:1140px;margin:auto;padding:24px 24px}
+h1,h2,p{margin:0}h1{font-size:clamp(23px,4vw,31px);letter-spacing:.04em}
+h2{font-size:17px}header p{margin-top:5px;color:#b8d4e6;font-family:Montserrat,system-ui,sans-serif;font-size:13px}
+main{display:grid;gap:16px}.sheet{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:20px}
+.title,.tools,.item{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.title{justify-content:space-between;margin-bottom:14px}
+.tools{margin-top:13px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+label{display:grid;gap:5px;font-weight:600;font-size:13px}.wide{grid-column:1/-1}.check{display:flex;align-items:center;gap:8px}.check input{width:auto}
+input,select,textarea,button{font:inherit;color:inherit}input,select,textarea{min-width:0;width:100%;padding:8px 10px;border:1px solid #b8cbdc;border-radius:7px;background:#fcfdff}
+textarea{resize:vertical;min-height:56px}button{cursor:pointer;border:1px solid #b8cbdc;border-radius:8px;background:#fff;padding:8px 12px;font-weight:650;min-height:36px}
+button:hover:not(:disabled){background:#e7f2fc}button.primary{background:var(--accent);border-color:var(--accent);color:white}
+button.primary:hover:not(:disabled){background:#005548}button:disabled{opacity:.5;cursor:default}a:focus-visible,input:focus-visible,button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #087b68;outline-offset:2px}
+.columns{display:grid;grid-template-columns:minmax(0, 4fr) minmax(0, 6fr);gap:16px;align-items:start}
+.item{border-top:1px solid var(--line);padding:9px 0;flex-wrap:nowrap}.item div{flex:1;min-width:0;overflow-wrap:anywhere}.item small,.muted{color:var(--muted);font-size:12px}.item button{font-size:12px;padding-inline:8px}.remove{color:#a13428}
+.count{border-radius:99px;background:var(--pale);color:#125a4c;padding:4px 10px;font-size:12px;font-weight:700}
+footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#status{min-height:22px;overflow-wrap:anywhere}[data-error="true"]{color:#a52b21}
+.options summary{cursor:pointer;font-weight:650}
+#entry-details{margin-top:14px}#entry-details .fields{margin-top:12px}
+#revision{width:112px}#status{flex:1;min-width:120px}
+#client-form{align-items:end}#client-form label{flex:1;min-width:min(280px,100%)}
+#modrinth-picker{margin-bottom:16px;padding:13px;border:1px solid var(--line);border-radius:9px;background:#f7fbfe}
+#modrinth-search{display:flex;align-items:end;gap:8px;margin:12px 0 8px}
+#modrinth-search label{flex:1;min-width:0}
+#modrinth-results{display:grid;gap:5px;margin-top:8px}
+.search-result{text-align:left;overflow-wrap:anywhere}
+.search-result small{display:block;margin-top:3px;color:var(--muted);font-weight:400}
+.search-result[aria-pressed="true"]{border-color:var(--accent);background:var(--pale)}
+#modrinth-status{min-height:1.4em;overflow-wrap:anywhere}
+#modrinth-versions{border-top:1px solid var(--line);margin-top:10px;padding-top:10px}
+#modrinth-add{margin-top:8px}
+[hidden]{display:none!important}
+@media(max-width:750px){.columns{grid-template-columns:1fr}.sheet{padding:15px}header>div,main{padding:17px}}
+@media(max-width:430px){.fields{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div><h1>星陽 配布カタログ</h1><p>Minecraft 1.19.2 / Fabric</p></div></header>
+<main>
+<div class="columns">
+<section class="sheet" aria-labelledby="catalog-title">
+  <div class="title"><h2 id="catalog-title">公開する項目</h2><span class="count" id="count">0 件</span></div>
+  <button id="load-catalog" type="button">公開済みカタログを開く</button>
+  <input id="catalog-input" type="file" accept=".json" hidden>
+  <p id="empty" class="muted" style="margin-top:14px">登録した Mod とリソースパックがここに並びます。</p>
+  <div id="entries" style="margin-top:13px"></div>
+</section>
+<section class="sheet" aria-labelledby="editor-title">
+  <div class="title"><h2 id="editor-title">ファイルを登録</h2></div>
+  <details id="modrinth-picker" class="options">
+    <summary>Modrinth から探す</summary>
+    <form id="modrinth-search">
+      <label>Mod 名<input id="modrinth-query" type="search" maxlength="120" placeholder="例 Sodium" required></label>
+      <button id="modrinth-submit" type="submit">検索</button>
+    </form>
+    <p id="modrinth-status" class="muted" role="status"></p>
+    <div id="modrinth-results" aria-label="検索結果"></div>
+    <div id="modrinth-pages" class="tools" hidden>
+      <button id="modrinth-prev" type="button">前へ</button>
+      <span id="modrinth-page" class="muted"></span>
+      <button id="modrinth-next" type="button">次へ</button>
+    </div>
+    <div id="modrinth-versions" hidden>
+      <label><span id="modrinth-version-label">選択した Mod のバージョン</span><select id="modrinth-version"></select></label>
+      <button id="modrinth-add" type="button" class="primary">このバージョンを追加</button>
+    </div>
+  </details>
+<form id="editor">
+  <div class="fields">
+    <label class="wide">配布 URL<input id="source" required type="url" placeholder="Modrinth、Google ドライブ、または JAR / ZIP の直接 URL"></label>
+    <label class="wide">ローカルの JAR / ZIP（任意）<input id="artifact" type="file" accept=".jar,.zip"></label>
+    <label class="check wide"><input id="required" type="checkbox">星陽への参加に必須</label>
+  </div>
+  <details id="entry-details" class="options">
+    <summary>表示名・依存関係など</summary>
+    <div class="fields">
+      <label>種類<select id="type"><option value="mod">Fabric Mod</option><option value="pack">リソースパック</option></select></label>
+      <label>ID<input id="id" maxlength="64"></label>
+      <label>表示名<input id="name" maxlength="100"></label>
+      <label>バージョン<input id="version" maxlength="100"></label>
+      <label>保存名<input id="file" maxlength="160"></label>
+      <label class="check wide"><input id="client-only" type="checkbox">クライアント専用 Mod</label>
+      <label>ファイルサイズ（バイト）<input id="manual-size" type="number" min="1" max="134217728" step="1"></label>
+      <label>SHA-256<input id="manual-hash" maxlength="64" placeholder="サイズと指定すると取得を省略"></label>
+      <label class="wide">依存先の ID<input id="requires" placeholder="例 fabric-api, mtr"></label>
+      <p id="dependency-hint" class="wide muted" hidden></p>
+      <label class="wide">更新メモ<textarea id="notes" maxlength="2000" rows="2"></textarea></label>
+    </div>
+  </details>
+  <div class="tools">
+    <button class="primary" id="save-entry" type="submit">一覧に追加</button>
+    <button id="refresh-source" type="submit" hidden>URL から再取得して保存</button>
+    <button id="reset-editor" type="button" hidden>編集を終了</button>
+  </div>
+</form>
+</section>
+</div>
+<footer class="sheet">
+  <label>配布番号<input id="revision" type="number" value="1" min="1" max="999999999999999" step="1"></label>
+  <p id="status" role="status" aria-live="polite"></p>
+  <button class="primary" id="export" type="button">manifest.json を出力</button>
+</footer>
+<details class="sheet options">
+  <summary>参加者用設定を作る（初回）</summary>
+  <form id="client-form" class="tools">
+    <label>公開する manifest.json の URL<input id="manifest-url" required type="url" placeholder="https://example.github.io/seiyo/manifest.json" autocomplete="off"></label>
+    <button id="client-config" type="submit">seiyo-updater.json を出力</button>
+  </form>
+</details>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const encoder = new TextEncoder();
+const decoder = new TextDecoder("utf-8", {fatal:true});
+const maxFile = 128 * 1024 * 1024;
+const maxJson = 2 * 1024 * 1024;
+const modrinthApi = "https://api.modrinth.com/v2";
+const gameVersion = "1.19.2";
+const searchPageSize = 10;
+const entries = new Map();
+let lastRevision = 0;
+let editing = null;
+let busy = false;
+let modrinthPage = null;
+let modrinthProject = null;
+let modrinthVersions = [];
+
+function status(message, error = false) {
+  $("status").textContent = message;
+  $("status").dataset.error = String(error);
+}
+
+function base64(bytes) {
+  const view = new Uint8Array(bytes);
+  let text = "";
+  for (let i = 0; i < view.length; i += 16384) {
+    text += String.fromCharCode(...view.subarray(i, i + 16384));
+  }
+  return btoa(text);
+}
+
+function unbase64(text) {
+  return Uint8Array.from(atob(text), ch => ch.charCodeAt(0));
+}
+
+function https(value) {
+  const url = new URL(value);
+  if (url.protocol !== "https:" || url.username || url.password || url.hash) {
+    throw new Error("認証情報やフラグメントを含まない HTTPS URL を入力してください。");
+  }
+  return url.href;
+}
+
+function normalizeSource(value) {
+  const url = new URL(https(value));
+  if (url.host !== "drive.google.com") return url.href;
+  const filePage = url.pathname.match(/^\/file\/(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]+)(?:\/(?:view|preview|edit))?\/?$/);
+  const queryPage = /^\/(?:open|uc)\/?$/.test(url.pathname);
+  const id = filePage ? filePage[1] : queryPage ? url.searchParams.get("id") : null;
+  if (!id || !/^[a-zA-Z0-9_-]+$/.test(id)) {
+    throw new Error("Google ドライブの JAR / ZIP ファイルを開き、その共有 URL を入力してください。");
+  }
+  if (/^\/uc\/?$/.test(url.pathname) && url.searchParams.get("export") === "download") return url.href;
+  const downloadUrl = new URL("https://drive.usercontent.google.com/download");
+  downloadUrl.searchParams.set("id", id);
+  downloadUrl.searchParams.set("export", "download");
+  downloadUrl.searchParams.set("confirm", "t");
+  const resourceKey = url.searchParams.get("resourcekey");
+  if (resourceKey) downloadUrl.searchParams.set("resourcekey", resourceKey);
+  return downloadUrl.href;
+}
+
+async function fetchPublic(url) {
+  let response;
+  try {
+    response = await fetch(url, {
+      credentials:"omit", referrerPolicy:"no-referrer", signal:AbortSignal.timeout(45000)
+    });
+  } catch (error) {
+    if (error.name === "TimeoutError") throw new Error("配布先への接続がタイムアウトしました。");
+    throw new Error("ブラウザーから配布先を取得できません。直接 URL を確認するか、JAR / ZIP を手元から選択してください。");
+  }
+  if (!response.ok) throw new Error("配布先から取得できませんでした（HTTP " + response.status + "）。");
+  https(response.url || url);
+  return response;
+}
+
+async function readRemote(response, limit) {
+  if (Number(response.headers.get("Content-Length")) > limit) throw new Error("取得するファイルが大きすぎます。");
+  const reader = response.body.getReader();
+  const chunks = [];
+  let size = 0;
+  for (;;) {
+    const {done, value} = await reader.read();
+    if (done) return new Blob(chunks);
+    size += value.length;
+    if (size > limit) {
+      await reader.cancel();
+      throw new Error("取得するファイルが大きすぎます。");
+    }
+    chunks.push(value);
+  }
+}
+
+async function modrinthJson(url) {
+  return JSON.parse(await (await readRemote(await fetchPublic(url), 8 * 1024 * 1024)).text());
+}
+
+async function compatibleVersions(project, loader, extension, label, releasesOnly, wantedFile = "") {
+  const endpoint = modrinthApi + "/project/" + encodeURIComponent(project) + "/version";
+  const query = new URLSearchParams({
+    loaders:JSON.stringify([loader]), game_versions:JSON.stringify([gameVersion]), include_changelog:"false"
+  });
+  const data = await modrinthJson(label ? endpoint + "/" + encodeURIComponent(label) : endpoint + "?" + query);
+  const candidates = label ? [data] : data;
+  const result = [];
+  for (const version of candidates.filter(version => version.game_versions?.includes(gameVersion) &&
+      version.loaders?.includes(loader) && (!releasesOnly || version.version_type === "release"))
+      .sort((left, right) => Date.parse(right.date_published) - Date.parse(left.date_published))) {
+    const files = (version.files || []).filter(file => file.filename.toLowerCase().endsWith(extension) &&
+      (!file.file_type || file.file_type === "unknown") && (!wantedFile || wantedFile === file.filename));
+    const file = files.find(file => file.primary) || files[0];
+    if (file) result.push({
+      number:version.version_number || version.name,
+      channel:version.version_type,
+      source:https(file.url),
+      filename:file.filename,
+      name:version.name,
+      size:file.size,
+      sha512:file.hashes?.sha512,
+      project:version.project_id || project
+    });
+  }
+  return result;
+}
+
+async function resolveSource(source) {
+  const url = new URL(source);
+  const cdn = url.hostname === "cdn.modrinth.com" &&
+    url.pathname.match(/^\/data\/([a-z0-9]+)\/versions\/([a-z0-9]+)\/([^/]+\.(jar|zip))$/i);
+  if (cdn) {
+    const [, project, version, filename, extension] = cdn;
+    const isMod = extension.toLowerCase() === "jar";
+    const versions = await compatibleVersions(project, isMod ? "fabric" : "minecraft",
+      isMod ? ".jar" : ".zip", version, false, decodeURIComponent(filename));
+    if (!versions.length) throw new Error("この Modrinth ファイルは星陽の環境に対応していません。");
+    return versions[0];
+  }
+  if (!["modrinth.com","www.modrinth.com"].includes(url.hostname)) return {source};
+  const [, kind, project, page, label, ...rest] = url.pathname.replace(/\/+$/, "").split("/");
+  if (!["mod","resourcepack"].includes(kind) || !project || rest.length ||
+      (page && page !== "versions" && !(page === "version" && label)) ||
+      (page !== "version" && label)) {
+    throw new Error("Modrinth の Mod・リソースパックのページか、個別バージョンの URL を入力してください。");
+  }
+  const loader = kind === "mod" ? "fabric" : "minecraft";
+  const extension = kind === "mod" ? ".jar" : ".zip";
+  const versions = await compatibleVersions(decodeURIComponent(project), loader, extension,
+    label ? decodeURIComponent(label) : "", !label);
+  if (versions.length) return versions[0];
+  throw new Error(label ? "指定されたバージョンは星陽の環境に対応していません。"
+    : "Minecraft 1.19.2 対応の正式版が見つかりません。ベータ版などは個別バージョンの URL を指定してください。");
+}
+
+async function fetchArchive(resolved) {
+  const isDrive = ["drive.google.com", "drive.usercontent.google.com"].includes(new URL(resolved.source).hostname);
+  const driveToken = isDrive ? document.querySelector?.('meta[name="seiyo-drive-token"]')?.content : "";
+  let response;
+  if (driveToken) {
+    response = await fetch("/drive?url=" + encodeURIComponent(resolved.source), {
+      headers:{"X-Seiyo-Drive":driveToken}, signal:AbortSignal.timeout(180000)
+    });
+    if (!response.ok) throw new Error(await response.text());
+  } else {
+    try {
+      response = await fetchPublic(resolved.source);
+    } catch (error) {
+      if (isDrive) throw new Error("Google ドライブはブラウザーから直接取得できませんでした。tools/drive-editor.cmd で開くか、手元のファイルを選んでください。");
+      throw error;
+    }
+  }
+  if (response.headers.get("Content-Type")?.toLowerCase().includes("text/html")) {
+    if (isDrive) {
+      throw new Error("Google ドライブからファイルを取得できませんでした。tools/drive-editor.cmd で開き、共有設定を確認してください。");
+    }
+    throw new Error("ダウンロード先が Web ページを返しました。JAR / ZIP の直接 URL を入力してください。");
+  }
+  const archive = await readRemote(response, maxFile);
+  const pathname = value => decodeURIComponent(new URL(value).pathname.split("/").at(-1));
+  const disposition = response.headers.get("Content-Disposition") || "";
+  let headerName = disposition.match(/(?:^|;)\s*filename\s*=\s*(?:"([^"]+)"|([^;]+))/i)?.slice(1).find(Boolean)?.trim();
+  const encodedName = disposition.match(/(?:^|;)\s*filename\*\s*=\s*UTF-8'[^']*'([^;]+)/i)?.[1]?.trim();
+  if (encodedName) {
+    try { headerName = decodeURIComponent(encodedName); } catch { /* Keep the plain filename if available. */ }
+  }
+  const name = [resolved.filename, headerName, pathname(response.url || resolved.source), pathname(resolved.source)]
+    .filter(value => value && !/[\\/]/.test(value))
+    .find(value => value && /\.(jar|zip)$/i.test(value));
+  if (name) return new File([archive], name);
+  try {
+    const metadata = await archiveMetadata(archive, "fabric.mod.json");
+    return new File([archive], metadata.id + ".jar");
+  } catch (error) {
+    await archiveMetadata(archive, "pack.mcmeta");
+    const source = new URL(resolved.source);
+    const id = source.hostname === "drive.usercontent.google.com" ? source.searchParams.get("id") : "";
+    const fallback = id ? "drive-" + id : pathname(resolved.source) || "resource-pack";
+    return new File([archive], fallback + ".zip");
+  }
+}
+
+function download(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+function jsonFile(data) {
+  return new Blob([JSON.stringify(data, null, 2) + "\n"], {type:"application/json"});
+}
+
+async function readJson(file, limit) {
+  if (!file || file.size > limit) throw new Error("JSON ファイルのサイズを確認してください。");
+  return JSON.parse(await file.text());
+}
+
+async function sha(bytes) {
+  if (!globalThis.crypto?.subtle) throw new Error("この HTML を新しいブラウザーで開いてください。");
+  return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
+    value => value.toString(16).padStart(2, "0")).join("");
+}
+
+function mask(bytes) {
+  for (let i = 0; i < bytes.length; i++) bytes[i] ^= 0xA7 ^ (i * 73) ^ (i >>> 8);
+  return bytes;
+}
+
+async function decodePayload(envelope) {
+  if (!["seiyo-signed-v1", "seiyo-packed-v1", "seiyo-packed-unsigned-v1"].includes(envelope.format)) {
+    throw new Error("配布カタログの形式を確認してください。");
+  }
+  const bytes = unbase64(envelope.payload);
+  if (envelope.format === "seiyo-signed-v1") return bytes;
+  const reader = new Blob([mask(bytes)]).stream().pipeThrough(new DecompressionStream("deflate")).getReader();
+  const chunks = [];
+  let total = 0;
+  for (;;) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > maxJson) {
+      await reader.cancel();
+      throw new Error("展開したカタログが大きすぎます。");
+    }
+    chunks.push(value);
+  }
+  return await new Blob(chunks).arrayBuffer();
+}
+
+async function archiveMetadata(file, wanted) {
+  const tail = await file.slice(Math.max(0, file.size - 65557)).arrayBuffer();
+  const end = new DataView(tail);
+  let offset = end.byteLength - 22;
+  while (offset >= 0 && (end.getUint32(offset, true) !== 0x06054b50 ||
+      offset + 22 + end.getUint16(offset + 20, true) !== end.byteLength)) offset--;
+  if (offset < 0 || end.getUint16(offset + 4, true) || end.getUint16(offset + 6, true)) {
+    throw new Error("JAR / ZIP を読み取れません。");
+  }
+  const length = end.getUint32(offset + 12, true);
+  const start = end.getUint32(offset + 16, true);
+  if (length > 16 * 1024 * 1024 || start + length > file.size) throw new Error("ZIP の目次が不正です。");
+  const central = new DataView(await file.slice(start, start + length).arrayBuffer());
+  for (let pos = 0; pos + 46 <= central.byteLength;) {
+    if (central.getUint32(pos, true) !== 0x02014b50) throw new Error("ZIP の目次が不正です。");
+    const nameLength = central.getUint16(pos + 28, true);
+    const name = new TextDecoder().decode(new Uint8Array(central.buffer, pos + 46, nameLength));
+    if (name === wanted) {
+      const method = central.getUint16(pos + 10, true);
+      const size = central.getUint32(pos + 20, true);
+      const uncompressed = central.getUint32(pos + 24, true);
+      const local = central.getUint32(pos + 42, true);
+      if (size > maxJson || uncompressed > maxJson || local + 30 > file.size) throw new Error("メタデータが大きすぎます。");
+      const header = new DataView(await file.slice(local, local + 30).arrayBuffer());
+      if (header.getUint32(0, true) !== 0x04034b50) throw new Error("ZIP のヘッダーが不正です。");
+      const data = local + 30 + header.getUint16(26, true) + header.getUint16(28, true);
+      const compressed = file.slice(data, data + size);
+      if (method !== 0 && method !== 8) throw new Error("メタデータの圧縮形式に対応していません。");
+      let bytes;
+      if (method === 0) {
+        bytes = await compressed.arrayBuffer();
+      } else {
+        const reader = compressed.stream().pipeThrough(new DecompressionStream("deflate-raw")).getReader();
+        const chunks = [];
+        let total = 0;
+        for (;;) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          total += value.length;
+          if (total > maxJson) {
+            await reader.cancel();
+            throw new Error("展開したメタデータが大きすぎます。");
+          }
+          chunks.push(value);
+        }
+        bytes = await new Blob(chunks).arrayBuffer();
+      }
+      if (bytes.byteLength !== uncompressed) throw new Error("ZIP のメタデータが破損しています。");
+      return JSON.parse(decoder.decode(bytes));
+    }
+    pos += 46 + nameLength + central.getUint16(pos + 30, true) + central.getUint16(pos + 32, true);
+  }
+  throw new Error(wanted + " がファイルの直下にありません。");
+}
+
+function validFile(name) {
+  return /^[a-z0-9][a-z0-9._+-]{0,158}[a-z0-9]$/i.test(name)
+    && !/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(name);
+}
+
+function validateEntry(entry) {
+  const mod = entry.type === "mod";
+  if (!/^[a-z][a-z0-9_-]{1,63}$/.test(entry.id) ||
+      typeof entry.name !== "string" || !entry.name.trim() || entry.name.length > 100 ||
+      typeof entry.version !== "string" || !entry.version.trim() || entry.version.length > 100 ||
+      (!mod && entry.type !== "pack") || !validFile(entry.file) ||
+      !entry.file.endsWith(mod ? ".jar" : ".zip") ||
+      !validHash(entry) || !Number.isInteger(entry.size) ||
+      entry.size < 1 || entry.size > maxFile || typeof entry.required !== "boolean" ||
+      !Array.isArray(entry.requires) || new Set(entry.requires).size !== entry.requires.length ||
+      !entry.requires.every(id => typeof id === "string" && /^[a-z][a-z0-9_-]{1,63}$/.test(id)) ||
+      typeof entry.notes !== "string" || entry.notes.length > 2000) {
+    throw new Error("ID・表示名・バージョン・保存名を確認してください。保存名には半角英数字と ._+- が使えます。");
+  }
+  if (entry.mode === "plain") https(entry.source);
+  else if (entry.mode !== "aes-gcm") throw new Error("配布方式を確認してください。");
+}
+
+function validHash(entry) {
+  if (Object.hasOwn(entry, "sha512")) {
+    return entry.mode === "plain" && !Object.hasOwn(entry, "sha256") && /^[a-f0-9]{128}$/.test(entry.sha512);
+  }
+  return /^[a-f0-9]{64}$/.test(entry.sha256);
+}
+
+function validateGraph(items) {
+  if (items.size > 250) throw new Error("登録上限は250件です。");
+  const fileNames = new Set();
+  const active = new Set();
+  const checked = new Set();
+  function visit(id) {
+    if (checked.has(id)) return;
+    if (active.has(id)) throw new Error("依存関係が循環しています。 " + id);
+    if (!items.has(id)) throw new Error("必要な項目を登録してください。 " + id);
+    active.add(id);
+    for (const dep of items.get(id).requires) visit(dep);
+    active.delete(id);
+    checked.add(id);
+  }
+  for (const item of items.values()) {
+    validateEntry(item);
+    const path = item.type + "/" + item.file.toLowerCase();
+    if (fileNames.has(path)) throw new Error("同じ種類の項目に同じ保存名があります。 " + item.file);
+    fileNames.add(path);
+    visit(item.id);
+  }
+}
+
+function clearEditor() {
+  editing = null;
+  $("editor").reset();
+  $("id").readOnly = false;
+  $("editor-title").textContent = "ファイルを登録";
+  $("save-entry").textContent = "一覧に追加";
+  $("reset-editor").hidden = true;
+  $("refresh-source").hidden = true;
+  $("dependency-hint").hidden = true;
+  $("entry-details").open = false;
+}
+
+function edit(item) {
+  clearEditor();
+  editing = item.id;
+  for (const field of ["id","name","version","type","file","notes"]) $(field).value = item[field] ?? "";
+  if (item.mode === "plain") $("source").value = item.source;
+  $("requires").value = item.requires.join(", ");
+  $("required").checked = item.required;
+  $("client-only").checked = item.clientOnly === true;
+  $("id").readOnly = true;
+  $("editor-title").textContent = "登録内容を編集";
+  $("save-entry").textContent = "変更を保存";
+  $("reset-editor").hidden = false;
+  $("refresh-source").hidden = false;
+  $("artifact").focus();
+}
+
+function render() {
+  $("client-config").disabled = busy;
+  $("export").disabled = busy;
+  $("load-catalog").disabled = busy;
+  $("save-entry").disabled = busy;
+  $("refresh-source").disabled = busy;
+  $("modrinth-submit").disabled = busy;
+  $("modrinth-prev").disabled = busy || !modrinthPage?.offset;
+  $("modrinth-next").disabled = busy || !modrinthPage ||
+    modrinthPage.offset + searchPageSize >= modrinthPage.total;
+  $("modrinth-add").disabled = busy || $("modrinth-version").value === "";
+  $("modrinth-add").textContent = editing ? "このバージョンで更新" : "このバージョンを追加";
+  $("count").textContent = entries.size + " 件";
+  $("empty").hidden = entries.size > 0;
+  $("entries").replaceChildren();
+  for (const item of entries.values()) {
+    const row = document.createElement("div");
+    row.className = "item";
+    const description = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = item.name;
+    const subline = document.createElement("small");
+    subline.textContent = item.id + " · " + item.version + (item.required ? " · 必須" : "")
+      + (item.mode === "aes-gcm" ? " · 要差し替え" : "");
+    description.append(title, document.createElement("br"), subline);
+    const change = document.createElement("button");
+    change.type = "button";
+    change.disabled = busy;
+    change.textContent = "編集";
+    change.addEventListener("click", () => edit(item));
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "remove";
+    remove.disabled = busy;
+    remove.textContent = "除外";
+    remove.addEventListener("click", () => {
+      entries.delete(item.id);
+      if (editing === item.id) clearEditor();
+      render();
+      status(item.name + " をカタログから外しました。");
+    });
+    row.append(description, change, remove);
+    $("entries").append(row);
+  }
+}
+
+async function run(task, report = status) {
+  if (busy) return;
+  busy = true;
+  render();
+  try {
+    report("");
+    await task();
+  } catch (error) {
+    report(error.message || String(error), true);
+  } finally {
+    busy = false;
+    render();
+  }
+}
+
+function modrinthStatus(message, error = false) {
+  $("modrinth-status").textContent = message;
+  $("modrinth-status").dataset.error = String(error);
+}
+
+function showSearchResults() {
+  $("modrinth-results").replaceChildren();
+  for (const project of modrinthPage.hits) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "search-result";
+    button.setAttribute("aria-pressed", String(modrinthProject?.project_id === project.project_id));
+    const title = document.createElement("strong");
+    title.textContent = project.title;
+    const detail = document.createElement("small");
+    detail.textContent = [project.author, project.description].filter(Boolean).join(" · ");
+    button.append(title, detail);
+    button.addEventListener("click", () => run(() => selectModrinthProject(project), modrinthStatus));
+    $("modrinth-results").append(button);
+  }
+  $("modrinth-pages").hidden = modrinthPage.total <= searchPageSize;
+  $("modrinth-page").textContent = (modrinthPage.offset + 1) + "〜" +
+    (modrinthPage.offset + modrinthPage.hits.length) + " / " + modrinthPage.total;
+}
+
+async function searchModrinth(query, offset) {
+  if (!query) return;
+  modrinthStatus("検索しています…");
+  const parameters = new URLSearchParams({
+    query, offset:String(offset), limit:String(searchPageSize),
+    facets:JSON.stringify([["project_type:mod"], ["categories:fabric"], ["versions:" + gameVersion]])
+  });
+  const response = await modrinthJson(modrinthApi + "/search?" + parameters);
+  if (!Array.isArray(response.hits) || !Number.isSafeInteger(response.total_hits)) {
+    throw new Error("Modrinth の検索結果を読み取れませんでした。");
+  }
+  modrinthPage = {query, offset, total:response.total_hits, hits:response.hits};
+  modrinthProject = null;
+  modrinthVersions = [];
+  $("modrinth-versions").hidden = true;
+  $("modrinth-version").replaceChildren();
+  showSearchResults();
+  modrinthStatus(response.hits.length ? "バージョンを確認したい Mod を選んでください。"
+    : "Minecraft 1.19.2／Fabric の候補が見つかりませんでした。");
+}
+
+async function selectModrinthProject(project) {
+  modrinthProject = project;
+  $("modrinth-versions").hidden = true;
+  $("modrinth-version").replaceChildren();
+  showSearchResults();
+  modrinthStatus(project.title + " の対応バージョンを探しています…");
+  modrinthVersions = await compatibleVersions(project.project_id, "fabric", ".jar", "", false);
+  if (!modrinthVersions.length) {
+    modrinthStatus("この Mod には Minecraft 1.19.2／Fabric に対応する配布 JAR がありません。");
+    return;
+  }
+  const placeholder = document.createElement("option");
+  placeholder.textContent = "バージョンを選択";
+  placeholder.value = "";
+  $("modrinth-version").append(placeholder);
+  modrinthVersions.forEach((version, index) => {
+    const option = document.createElement("option");
+    const channel = {release:"正式版", beta:"ベータ", alpha:"アルファ"}[version.channel] || "";
+    option.value = String(index);
+    option.textContent = [version.number || version.filename, channel].filter(Boolean).join(" · ");
+    $("modrinth-version").append(option);
+  });
+  $("modrinth-version").value = "";
+  $("modrinth-version-label").textContent = project.title + " の対応バージョン";
+  $("modrinth-versions").hidden = false;
+  $("modrinth-version").focus();
+  modrinthStatus("");
+}
+
+$("modrinth-search").addEventListener("submit", event => {
+  event.preventDefault();
+  run(() => searchModrinth($("modrinth-query").value.trim(), 0), modrinthStatus);
+});
+$("modrinth-prev").addEventListener("click", () =>
+  run(() => searchModrinth(modrinthPage.query, modrinthPage.offset - searchPageSize), modrinthStatus));
+$("modrinth-next").addEventListener("click", () =>
+  run(() => searchModrinth(modrinthPage.query, modrinthPage.offset + searchPageSize), modrinthStatus));
+$("modrinth-version").addEventListener("change", () => {
+  $("modrinth-add").disabled = busy || $("modrinth-version").value === "";
+});
+$("modrinth-add").addEventListener("click", () => {
+  const index = $("modrinth-version").value;
+  if (index !== "" && modrinthVersions[index]) {
+    run(() => saveEntry(false, modrinthVersions[index], modrinthStatus), modrinthStatus);
+  }
+});
+
+function receive(input, handler) {
+  $(input).addEventListener("change", () => {
+    const file = $(input).files[0];
+    $(input).value = "";
+    if (file) run(() => handler(file));
+  });
+}
+
+$("client-form").addEventListener("submit", event => {
+  event.preventDefault();
+  run(async () => {
+    const manifestUrl = https($("manifest-url").value.trim());
+    download(jsonFile({manifestUrl}), "seiyo-updater.json");
+    status("参加者用設定ファイルを出力しました。");
+  });
+});
+
+$("load-catalog").addEventListener("click", () => {
+  if ((entries.size || lastRevision) && !confirm("編集中の一覧を読み込むカタログで置き換えますか？")) return;
+  $("catalog-input").click();
+});
+receive("catalog-input", async file => {
+  const envelope = await readJson(file, maxJson);
+  const data = JSON.parse(decoder.decode(await decodePayload(envelope)));
+  if (data.format !== "seiyo-catalog-v1" || data.minecraft !== "1.19.2" || data.loader !== "fabric" ||
+      !Number.isSafeInteger(data.revision) || data.revision < 1 || data.revision >= 999999999999999 ||
+      !Array.isArray(data.entries)) throw new Error("配布カタログの形式を確認してください。");
+  const imported = new Map(data.entries.map(item => [item.id, item]));
+  if (imported.size !== data.entries.length) throw new Error("配布カタログに重複した ID があります。");
+  validateGraph(imported);
+  entries.clear();
+  for (const [id, item] of imported) entries.set(id, item);
+  lastRevision = data.revision;
+  $("revision").value = lastRevision + 1;
+  clearEditor();
+  status("配布 #" + data.revision + " を読み込みました。");
+});
+
+$("reset-editor").addEventListener("click", clearEditor);
+$("artifact").addEventListener("change", () => run(async () => {
+  const file = $("artifact").files[0];
+  if (file) await populateFromArchive(file);
+}));
+
+async function populateFromArchive(file) {
+  if (file.size < 1 || file.size > maxFile) throw new Error("1ファイルの上限は128 MiBです。");
+  const isMod = /\.jar$/i.test(file.name);
+  $("type").value = isMod ? "mod" : "pack";
+  if (isMod) {
+    const metadata = await archiveMetadata(file, "fabric.mod.json");
+    if (editing && metadata.id !== editing) throw new Error("編集している ID と JAR の Mod ID が異なります。");
+    $("id").value = metadata.id || "";
+    $("version").value = metadata.version || "";
+    if (!editing) $("name").value = String(metadata.name || metadata.id || "");
+    if (metadata.environment === "client") $("client-only").checked = true;
+    const requires = Object.keys(metadata.depends || {}).filter(id => !["minecraft","java","fabricloader"].includes(id));
+    if (!editing) $("requires").value = requires.filter(id => entries.has(id)).join(", ");
+    $("dependency-hint").hidden = requires.length === 0;
+    $("dependency-hint").textContent = "JAR が要求する Mod: " + requires.join(", ") + "。この一覧で配布する項目の ID を入力してください。";
+  } else {
+    await archiveMetadata(file, "pack.mcmeta");
+    if (!editing) {
+      $("name").value = file.name.replace(/\.zip$/i, "").slice(0, 100);
+      const slug = $("name").value.toLowerCase().replace(/[^a-z0-9_-]+/g, "-")
+        .replace(/^[^a-z]+|[-_]+$/g, "").slice(0, 64);
+      let number = entries.size + 1;
+      while (entries.has("pack-" + number)) number++;
+      $("id").value = slug.length > 1 ? slug : "pack-" + number;
+      $("version").value = $("revision").value || "1";
+    }
+    $("dependency-hint").hidden = true;
+  }
+  if (!editing || isMod) {
+    const extension = isMod ? ".jar" : ".zip";
+    const filename = file.name.replace(/\.(jar|zip)$/i, extension);
+    $("file").value = validFile(filename) && filename.endsWith(extension) ? filename : $("id").value + extension;
+  }
+}
+
+$("editor").addEventListener("submit", event => {
+  event.preventDefault();
+  run(() => saveEntry(editing !== null && event.submitter === $("refresh-source")));
+});
+
+async function saveEntry(refreshSource, remote = null, report = status) {
+  const previous = editing ? entries.get(editing) : null;
+  let file = refreshSource || remote ? null : $("artifact").files[0];
+  const url = remote?.source || normalizeSource($("source").value.trim());
+  const sameSource = !remote && !refreshSource && previous?.mode === "plain" && previous.source === url;
+  const manualSize = $("manual-size").value;
+  const manualHash = ($("manual-hash").value || "").trim().toLowerCase();
+  const manual = !remote && !refreshSource && !file && Boolean(manualSize || manualHash);
+  if (manual && (!manualSize || !manualHash)) throw new Error("サイズと SHA-256 の両方を入力してください。");
+  const resolved = remote || (manual || sameSource || (file && new URL(url).hostname === "cdn.modrinth.com")
+    ? {source:url} : await resolveSource(url));
+  const fromMetadata = !file && Boolean(resolved.project);
+  if (fromMetadata) {
+    if (!/^[a-f0-9]{128}$/.test(resolved.sha512) || !Number.isSafeInteger(resolved.size) || resolved.size < 1) {
+      throw new Error("Modrinth にファイルサイズまたは SHA-512 がありません。ローカルのファイルと直接 URL を指定してください。");
+    }
+    if (resolved.size > maxFile) throw new Error("このファイルはアップデーターの上限（128 MiB）を超えています。");
+    const isMod = /\.jar$/i.test(resolved.filename);
+    const type = isMod ? "mod" : "pack";
+    const projectId = resolved.project.replace(/[A-Z]/g, letter => "-" + letter.toLowerCase());
+    $("type").value = type;
+    $("id").value = previous?.id || "modrinth-" + projectId;
+    $("version").value = resolved.number;
+    if (!previous) {
+      const extension = isMod ? ".jar" : ".zip";
+      $("name").value = (remote ? modrinthProject.title : resolved.name || resolved.filename).slice(0, 100);
+      $("file").value = validFile(resolved.filename) && resolved.filename.endsWith(extension) ?
+        resolved.filename : $("id").value + extension;
+    }
+  } else if (!file && !sameSource && !manual) {
+    report("配布 URL から取得しています…");
+    file = await fetchArchive(resolved);
+    await populateFromArchive(file);
+  }
+  const item = {};
+  for (const field of ["id","name","version","type","file","notes"]) item[field] = $(field).value.trim();
+  if (!editing && entries.has(item.id)) throw new Error("この ID は登録済みです。一覧から編集してください。");
+  if (previous && previous.type !== item.type) throw new Error("登録済みの項目は種類を変更できません。");
+  item.required = $("required").checked;
+  if (item.type === "mod" && $("client-only").checked) item.clientOnly = true;
+  item.requires = Array.from(new Set($("requires").value.split(/[\s,、]+/).filter(Boolean)));
+  item.mode = "plain";
+  item.source = resolved.source;
+  if (!file && !fromMetadata && !manual && (!previous || previous.mode !== "plain" ||
+      (item.type === "mod" && previous.version !== item.version))) {
+    throw new Error("登録・更新する JAR / ZIP を選んでください。");
+  }
+  if (fromMetadata) {
+    item.sha512 = resolved.sha512;
+    item.size = resolved.size;
+  } else if (manual) {
+    item.sha256 = manualHash;
+    item.size = Number(manualSize);
+  } else if (file) {
+    if (file.size < 1 || file.size > maxFile) throw new Error("1ファイルの上限は128 MiBです。");
+    if (item.type === "mod") {
+      const metadata = await archiveMetadata(file, "fabric.mod.json");
+      if (metadata.id !== item.id || metadata.version !== item.version || metadata.environment === "server") {
+        throw new Error("JAR の Mod ID・バージョン・クライアント対応を確認してください。");
+      }
+    } else {
+      const metadata = await archiveMetadata(file, "pack.mcmeta");
+      if (!Number.isInteger(metadata.pack?.pack_format)) throw new Error("pack.mcmeta の pack_format を確認してください。");
+    }
+    const data = await file.arrayBuffer();
+    item.sha256 = await sha(data);
+    item.size = data.byteLength;
+  } else {
+    if (Object.hasOwn(previous, "sha512")) item.sha512 = previous.sha512;
+    else item.sha256 = previous.sha256;
+    item.size = previous.size;
+  }
+  try {
+    validateEntry(item);
+  } catch (error) {
+    $("entry-details").open = true;
+    throw error;
+  }
+  entries.set(item.id, item);
+  clearEditor();
+  report(item.name + " を登録しました。");
+}
+
+$("export").addEventListener("click", () => run(async () => {
+  validateGraph(entries);
+  const revision = Number($("revision").value);
+  if (!Number.isSafeInteger(revision) || revision <= lastRevision || revision < 1 || revision > 999999999999999) {
+    throw new Error("公開済みの番号より大きい配布番号を入力してください。");
+  }
+  const payload = encoder.encode(JSON.stringify({
+    format:"seiyo-catalog-v1", minecraft:"1.19.2", loader:"fabric", revision, entries:[...entries.values()]
+  }));
+  if ([...entries.values()].some(entry => entry.mode !== "plain")) {
+    throw new Error("「要差し替え」の項目は、元の JAR／ZIP と直接 URL を指定し直してください。");
+  }
+  if (payload.length > maxJson) throw new Error("カタログが大きすぎます。");
+  const compressed = await new Response(new Blob([payload]).stream()
+    .pipeThrough(new CompressionStream("deflate"))).arrayBuffer();
+  const packed = mask(new Uint8Array(compressed));
+  const manifest = jsonFile({format:"seiyo-packed-unsigned-v1", payload:base64(packed)});
+  if (manifest.size > maxJson) throw new Error("カタログのサイズ上限は2 MiBです。");
+  download(manifest, "manifest.json");
+  lastRevision = revision;
+  $("revision").value = revision + 1;
+  status("manifest.json を出力しました。HTTPS の配布先に置いてください。");
+}));
+
+render();
+</script>
+</body>
+</html>
